@@ -1,0 +1,226 @@
+<!DOCTYPE HTML>
+
+<!--
+  Theory by TEMPLATED
+  templated.co @templatedco
+  Released for free under the Creative Commons Attribution 3.0 license (templated.co/license)
+-->
+
+<html>
+
+  <head>
+    <title>MCSafetyFeed</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="thirdparty/templated-theory/assets/css/main.css" />
+    <link rel="stylesheet" href="thirdparty/tingle-master/dist/tingle.min.css" />
+    <style>
+      #table-loading {
+        padding-top: 3rem;
+        width: 100%;
+        margin: auto;
+      }
+
+      #current-calls-table {
+        display: none;
+      }
+
+     
+    </style>
+
+  </head>
+  <body class="subpage">
+
+    <!-- Header -->
+      <header id="header">
+        <div class="inner">
+          <a href="index.html" class="logo">MCSafetyFeed</a>
+          <nav id="nav">
+            <a href="/index.html">Home</a>
+            <a href="/current_calls.html">Current Calls</a>
+            <a href="/call_history.html">Call History</a>
+            <a href="/address_search.html">Address Search</a>
+          </nav>
+          <a href="#navPanel" class="navPanelToggle"><span class="fa fa-bars"></span></a>
+        </div>
+      </header>
+
+    <!-- Banner -->
+      <section id="banner">
+        <h1>Monroe County, NY Safety Feed</h1>
+        <p>An unofficial 911 call collator for the Rochester, NY region</p>
+      </section>
+
+    <!-- One -->
+      <section id="one" class="wrapper">
+        <div class="inner">
+          <div class="flex flex-1">
+            <div id="table-loading">
+              <center>
+                <img src="media/ajax-loader.gif"></img><br/><br/>
+                Loading ...
+              </center>
+            </div>
+            <table id="current-calls-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Call Type</th>
+                  <th>Address</th>
+                  <th>Status</th>
+                  <th>Agency</th>
+                  <!--<th>ID</th>-->
+                </tr>
+              </thead>
+              <tbody id="current-calls-tbody">
+              
+              </tbody>
+            </table>
+
+          </div>
+        </div>
+      </section>
+
+      <div id="dispatch-details-modal" class="modal">
+            
+      </div>
+
+    <!-- Scripts -->
+      <script src="thirdparty/templated-theory/assets/js/jquery.min.js"></script>
+      <script src="thirdparty/templated-theory/assets/js/skel.min.js"></script>
+      <script src="thirdparty/templated-theory/assets/js/util.js"></script>
+      <script src="thirdparty/templated-theory/assets/js/main.js"></script>
+
+      <script src="thirdparty/tingle-master/dist/tingle.min.js"></script>
+
+      <script>
+      
+      var dispatches = [];
+
+      function parseUTCDateTime(dt) {
+        
+        var ret_str = '';
+
+        if ( dt ) {
+
+
+
+          //dt_str = dt.replace(' ', '<br/>');
+          var d = dt.split(' ')[0]
+          var t = dt.split(' ')[1]
+
+          var year = d.split('-')[0];
+          var month = d.split('-')[1];
+          var day = d.split('-')[2];
+
+          var hour = t.split(':')[0];
+          var minute = t.split(':')[1];
+          var second = t.split(':')[2];
+
+          dt_str = month + '/' + day + '/' + year + ' ' + hour + ':' + minute + ':' + second + ' UTC';
+
+          var _date = new Date(dt_str);
+
+          ret_str = _date.toLocaleString().replace(', ', '<br/>');
+
+          //console.log(dt, ret_str);
+
+        }
+
+        return ret_str;
+      }
+
+        $.ajax({
+          url: 'http://localhost:6543/api/v1/dispatches?status=!CLOSED',
+          method:'GET',
+          success: function(resp) {
+            console.log('SUCCESS');
+            console.log(resp);
+
+            dispatches = resp.collection;
+
+            html = '';
+            for(var i=0;i<resp.collection.length;i++) {
+              var dispatch = resp.collection[i];
+              html += '<tr id="dispatch-index-' + i + '" class="dispatch-row">';
+              html += '<td>' + dispatch.creation_datetime_utc + '</td>';
+              html += '<td>' + dispatch.call_type.title + '</td>';
+              html += '<td>' + dispatch.address.raw_address + '</td>';
+              html += '<td>' + dispatch.current_status + '</td>';
+              html += '<td>' + dispatch.agency.full_name + '</td>';
+              //html += '<td>' + dispatch.dispatch_unique + '</td>';
+              html += '</tr>';
+            }
+            $('#current-calls-tbody').html(html);
+            $('#table-loading').hide();
+            $('#current-calls-table').show();
+
+            $('.dispatch-row').off('click');
+            $('.dispatch-row').on('click', function() {
+              
+              var index = parseInt($(this).prop('id').split('dispatch-index-')[1]);
+              var dispatch = dispatches[index];
+
+              html = '';
+              html += '<h2>Dispatch Details</h2>';
+              html += '</hr>'
+              html += '<table><tbody>';
+              html += '<tr><td>Call Type</td><td>' + dispatch.call_type.title + '</td></tr>';
+              html += '<tr><td>Dispatch Address</td><td>' + dispatch.address.raw_address + '</td></tr>';
+
+              html += '<tr><td>Dispatch Time</td><td>' + parseUTCDateTime(dispatch.dispatched_datetime_utc) + '</td></tr>';
+              html += '<tr><td>Waiting Time</td><td>' + dispatch.waiting_datetime_utc + '</td></tr>';
+              html += '<tr><td>Enroute Time</td><td>' + dispatch.enroute_datetime_utc + '</td></tr>';
+              html += '<tr><td>On Scene Time</td><td>' + dispatch.onscene_datetime_utc + '</td></tr>';
+              html += '<tr><td>Closed Time</td><td>' + dispatch.closed_datetime_utc + '</td></tr>';
+              
+              // instanciate new modal
+              var modal = new tingle.modal({
+                footer: true,
+                stickyFooter: false,
+                //closeMethods: ['overlay', 'button', 'escape'],
+                closeMethods: ['overlay', 'escape'],
+                closeLabel: "Close",
+                //cssClass: ['custom-class-1', 'custom-class-2'],
+                onOpen: function() {
+                  console.log('modal open');
+                },
+                onClose: function() {
+                  console.log('modal closed');
+                },
+                beforeClose: function() {
+                  // here's goes some logic
+                  // e.g. save content before closing the modal
+                  return true; // close the modal
+                  //return false; // nothing happens
+                }
+              });
+
+              modal.setContent(html);
+
+              // add a button
+              modal.addFooterBtn('Close', 'tingle-btn tingle-btn--danger', function() {
+                // here goes some logic
+                modal.close();
+              });
+
+
+              modal.open();
+
+            });
+
+          },
+          error: function(resp) {
+            console.log('ERROR');
+            console.log(resp);
+          }
+        });
+
+        
+
+      </script>
+
+
+  </body>
+
+</html>
