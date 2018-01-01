@@ -21,6 +21,7 @@ requires = [
     'requests',
     'python-dateutil',
     'wsgicors',
+    'psycopg2',
     ]
 
 tests_require = [

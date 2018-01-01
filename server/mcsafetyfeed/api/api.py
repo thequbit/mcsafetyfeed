@@ -34,6 +34,10 @@ from ..models import (
     Settings,
 )
 
+@view_config(route_name='/', renderer='../static/index.jinja2')
+def view_index(request):
+    return {}
+
 @view_defaults(route_name='/api/v1/scraper_runs', renderer='json')
 class ScraperRunsAPI(BaseRequest):
     

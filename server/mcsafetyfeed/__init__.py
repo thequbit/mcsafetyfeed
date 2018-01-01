@@ -6,6 +6,7 @@ def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
     """
     config = Configurator(settings=settings)
+    config.include('pyramid_jinja2')
 
     secret = config.get_settings().get('mcsafetyfeed.secret')
     if not secret:
