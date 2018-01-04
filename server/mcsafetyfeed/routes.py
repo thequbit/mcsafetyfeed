@@ -8,7 +8,7 @@ def includeme(config):
     config.add_route('/api/v1/scraper_runs', '/api/v1/scraper_runs')
 
     # dispatches
-    config.add_route('/api/v1/dispatches', '/dispatches')
+    config.add_route('/api/v1/dispatches', '/api/v1/dispatches')
     config.add_route('/api/v1/dispatches/_publish', '/api/v1/dispatches/_publish')
     config.add_route('/api/v1/dispatches/_cleanup', '/api/v1/dispatches/_cleanup')
     config.add_route('/api/v1/dispatches/{id}', '/api/v1/dispatches/{id}')

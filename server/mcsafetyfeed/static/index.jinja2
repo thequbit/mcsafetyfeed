@@ -37,9 +37,11 @@
           <a href="index.html" class="logo">MCSafetyFeed</a>
           <nav id="nav">
             <a href="/">Home</a>
+            <!--
             <a href="/current_calls.html">Current Calls</a>
             <a href="/call_history.html">Call History</a>
             <a href="/address_search.html">Address Search</a>
+            -->
           </nav>
           <a href="#navPanel" class="navPanelToggle"><span class="fa fa-bars"></span></a>
         </div>
@@ -99,11 +101,9 @@
 
       function parseUTCDateTime(dt) {
         
-        var ret_str = '';
+        var ret_str = ' - ';
 
         if ( dt ) {
-
-
 
           //dt_str = dt.replace(' ', '<br/>');
           var d = dt.split(' ')[0]
@@ -121,17 +121,22 @@
 
           var _date = new Date(dt_str);
 
-          ret_str = _date.toLocaleString().replace(', ', '<br/>');
+          //ret_str = _date.toLocaleString().replace(', ', '<br/>');
+          ret_str = _date.toLocaleString();
 
           //console.log(dt, ret_str);
 
+        }
+
+        if ( ret_str == null || ret_str == 'null' ) {
+          ret_str = ' - ';
         }
 
         return ret_str;
       }
 
         $.ajax({
-          url: 'http://localhost:6543/api/v1/dispatches?status=!CLOSED',
+          url: 'http://new.mcsafetyfeed.org/api/v1/dispatches?current_status=!CLOSED',
           method:'GET',
           success: function(resp) {
             console.log('SUCCESS');
@@ -165,14 +170,17 @@
               html += '<h2>Dispatch Details</h2>';
               html += '</hr>'
               html += '<table><tbody>';
+              
+              html += '<tr><td>ID</td><td>' + dispatch.dispatch_unique + '</td></tr>';
+
               html += '<tr><td>Call Type</td><td>' + dispatch.call_type.title + '</td></tr>';
               html += '<tr><td>Dispatch Address</td><td>' + dispatch.address.raw_address + '</td></tr>';
 
-              html += '<tr><td>Dispatch Time</td><td>' + parseUTCDateTime(dispatch.dispatched_datetime_utc) + '</td></tr>';
-              html += '<tr><td>Waiting Time</td><td>' + dispatch.waiting_datetime_utc + '</td></tr>';
-              html += '<tr><td>Enroute Time</td><td>' + dispatch.enroute_datetime_utc + '</td></tr>';
-              html += '<tr><td>On Scene Time</td><td>' + dispatch.onscene_datetime_utc + '</td></tr>';
-              html += '<tr><td>Closed Time</td><td>' + dispatch.closed_datetime_utc + '</td></tr>';
+              html += '<tr><td>Dispatch Date/Time</td><td>' + parseUTCDateTime(dispatch.dispatched_datetime_utc) + '</td></tr>';
+              html += '<tr><td>Waiting Date/Time</td><td>' + parseUTCDateTime(dispatch.waiting_datetime_utc) + '</td></tr>';
+              html += '<tr><td>Enroute Date/Time</td><td>' + parseUTCDateTime(dispatch.enroute_datetime_utc) + '</td></tr>';
+              html += '<tr><td>On Scene Date/Time</td><td>' + parseUTCDateTime(dispatch.onscene_datetime_utc) + '</td></tr>';
+              html += '<tr><td>Closed Date/Time</td><td>' + parseUTCDateTime(dispatch.closed_datetime_utc) + '</td></tr>';
               
               // instanciate new modal
               var modal = new tingle.modal({

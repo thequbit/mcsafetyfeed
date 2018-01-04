@@ -1,10 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
-export WORKON_HOME=~/Envs
-source /usr/local/bin/virtualenvwrapper.sh
+#export WORKON_HOME=~/Envs
+#source /usr/local/bin/virtualenvwrapper.sh
 
-workon mcsafetyfeed
-python scraper.py
-deactivate
+#workon mcsafetyfeed
+cd /home/ubuntu/mcsafetyfeed/scraper && python scraper.py
+#deactivate
 
 

@@ -214,6 +214,7 @@ class DispatchesInsertAPI(BaseRequest):
                                 if dispatch.__dict__[key] == None:
                                     payload = dict()
                                     payload[key] = datetime.datetime.utcnow()
+                                    payload['current_status'] = status_string
                                     dispatch = Dispatches.update_by_id(self.request.dbsession, dispatch.id, **payload)
 
                             else:

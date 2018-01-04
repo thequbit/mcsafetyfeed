@@ -214,19 +214,19 @@ class GetByMixin():
             _val = params[param]
             if params[param] is not None and len(params[param]) >= 2:
                 if params[param][0] is '>':
-                    #print("GREATER THAN OR EQUAL")
+                    print("GREATER THAN OR EQUAL")
                     _val = params[param][1:]
                     _things = _things.filter(
                         cls.__dict__[param] >= _val,
                     )
                 elif params[param][0] is '<':
-                    #print("LESS THAN OR EQUAL")
+                    print("LESS THAN OR EQUAL")
                     _val = params[param][1:]
                     _things = _things.filter(
                         cls.__dict__[param] <= _val,
                     )
                 elif params[param][0] is '!':
-                    #print("NOT EQUAL")
+                    print("NOT EQUAL")
                     _val = params[param][1:]
                     _things = _things.filter(
                         cls.__dict__[param] != _val,

@@ -1,6 +1,7 @@
 
 import requests
 import json
+import time
 
 import xml.etree.ElementTree as ElementTree
 
@@ -53,7 +54,7 @@ def parse_xml(xml):
     return items
 
 
-def create_scraper_run(url, xml):
+def create_scraper_run(url, xml, token):
 
     success = True
 
@@ -89,7 +90,7 @@ def publish_items(url, items, token):
 
     return success, dispatches
 
-def cleanup(url, dispatch_uniques):
+def cleanup(url, dispatch_uniques, token):
 
     resp = requests.put('%s?token=%s' % (url, token), json=dict(dispatch_uniques=dispatch_uniques))
 
@@ -100,7 +101,9 @@ def cleanup(url, dispatch_uniques):
 
     return jresp
 
-if __name__ == '__main__':
+#if __name__ == '__main__':
+
+def run():
 
     print("Start.")
 
@@ -114,7 +117,7 @@ if __name__ == '__main__':
     xml = get_rss_xml(rss_url)
     items = parse_xml(xml)
 
-    success = create_scraper_run(scraper_run_url, xml)
+    success = create_scraper_run(scraper_run_url, xml, token)
 
     success, dispatches = publish_items(publish_url, items, token)
 
@@ -122,6 +125,14 @@ if __name__ == '__main__':
     for d in dispatches:
         dispatch_uniques.append(d['dispatch_unique'])
 
-    closed_count = cleanup(cleanup_url, dispatch_uniques)
+    closed_count = cleanup(cleanup_url, dispatch_uniques, token)
 
     print("Successfully sent %i items." % len(dispatches))
+
+if __name__ == '__main__':
+
+    while True:
+
+        run()
+
+        time.sleep(30)

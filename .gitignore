@@ -58,3 +58,6 @@ target/
 
 # don't commit sqlite development database
 *.sqlite
+
+# production config file
+*production.ini
