@@ -14,7 +14,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="static/thirdparty/templated-theory/assets/css/main.css" />
     <link rel="stylesheet" href="static/thirdparty/tingle-master/dist/tingle.min.css" />
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" />
+
     <style>
+
       #table-loading {
         padding-top: 3rem;
         width: 100%;
@@ -23,6 +27,13 @@
 
       #current-calls-table {
         display: none;
+      }
+
+      #current-dispatches-map {
+        height: 28rem; 
+        width: 100%;
+        margin: auto;
+        margin-top: 2rem;
       }
 
      
@@ -53,7 +64,16 @@
         <p>An unofficial 911 call collator for the Rochester, NY region</p>
       </section>
 
-    <!-- One -->
+    <!-- Map -->
+    <section>
+      <div class="inner">
+        <div class="flex flex-1">
+          <div id="current-dispatches-map"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Table -->
       <section id="one" class="wrapper">
         <div class="inner">
           <div class="flex flex-1">
@@ -95,8 +115,18 @@
 
       <script src="static/thirdparty/tingle-master/dist/tingle.min.js"></script>
 
+      <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
+
       <script>
-      
+
+      var lut = {
+        DISPATCHED: 'red',
+        WAITING: 'orange',
+        ENROUTE: 'yellow',
+        ONSCENE: 'green',
+        CLOSED: 'gray',
+      }
+
       var dispatches = [];
 
       function parseUTCDateTime(dt) {
@@ -135,94 +165,194 @@
         return ret_str;
       }
 
-        $.ajax({
-          url: 'http://new.mcsafetyfeed.org/api/v1/dispatches?current_status=!CLOSED',
-          method:'GET',
-          success: function(resp) {
-            console.log('SUCCESS');
-            console.log(resp);
+      
+      var map = L.map(
+        'current-dispatches-map',
+        {
+          // options here
+        },
+      ).setView([43.155, -77.610924], 10);
 
-            dispatches = resp.collection;
+      // create the tile layer with correct attribution
+      var osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+      var osmAttrib='Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors';
+      var osm = new L.TileLayer(osmUrl, {minZoom: 9, maxZoom: 16, attribution: osmAttrib}); 
 
-            html = '';
-            for(var i=0;i<resp.collection.length;i++) {
-              var dispatch = resp.collection[i];
-              html += '<tr id="dispatch-index-' + i + '" class="dispatch-row">';
-              html += '<td>' + dispatch.creation_datetime_utc + '</td>';
-              html += '<td>' + dispatch.call_type.title + '</td>';
-              html += '<td>' + dispatch.address.raw_address + '</td>';
-              html += '<td>' + dispatch.current_status + '</td>';
-              html += '<td>' + dispatch.agency.full_name + '</td>';
-              //html += '<td>' + dispatch.dispatch_unique + '</td>';
-              html += '</tr>';
+      map.addLayer(osm);
+
+      // this taken from the 20m county
+      // geojson provided here:
+      //  http://eric.clst.org/tech/usgeojson/
+      var monroe_county_geojson = {
+        "type": "FeatureCollection",
+        "features": [
+          { "type": "Feature", "properties": { "GEO_ID": "0500000US36055", "STATE": "36", "COUNTY": "055", "NAME": "Monroe", "LSAD": "County", "CENSUSAREA": 657.205000 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ -77.995591, 43.365293 ], [ -77.994838, 43.365259 ], [ -77.976438, 43.369159 ], [ -77.965238, 43.368059 ], [ -77.952937, 43.363460 ], [ -77.922736, 43.356960 ], [ -77.904836, 43.356960 ], [ -77.875335, 43.349660 ], [ -77.816533, 43.343560 ], [ -77.797381, 43.339857 ], [ -77.785132, 43.339261 ], [ -77.760231, 43.341161 ], [ -77.756931, 43.337361 ], [ -77.730630, 43.330161 ], [ -77.714129, 43.323561 ], [ -77.701429, 43.308261 ], [ -77.660359, 43.282998 ], [ -77.653759, 43.279484 ], [ -77.628315, 43.271303 ], [ -77.602161, 43.256949 ], [ -77.577223, 43.243263 ], [ -77.551022, 43.235763 ], [ -77.534184, 43.234569 ], [ -77.500920, 43.250363 ], [ -77.476642, 43.254522 ], [ -77.436831, 43.265701 ], [ -77.414516, 43.269263 ], [ -77.391015, 43.276363 ], [ -77.385388, 43.276847 ], [ -77.376038, 43.277652 ], [ -77.374351, 43.152584 ], [ -77.371478, 43.034696 ], [ -77.485418, 43.034564 ], [ -77.482517, 42.943164 ], [ -77.580377, 42.943963 ], [ -77.732378, 42.945285 ], [ -77.730957, 42.988372 ], [ -77.909832, 42.987762 ], [ -77.951044, 43.039544 ], [ -77.905934, 43.133561 ], [ -77.997290, 43.132981 ], [ -77.995723, 43.284963 ], [ -77.995665, 43.287448 ], [ -77.995591, 43.365293 ] ] ] } }
+         ]
+      }
+      L.geoJSON(monroe_county_geojson).addTo(map);
+
+      $.ajax({
+        url: 'api/v1/dispatches?current_status=!CLOSED',
+        method:'GET',
+        success: function(resp) {
+          //console.log('SUCCESS');
+          //console.log(resp);
+
+          dispatches = resp.collection;
+
+          html = '';
+          for(var i=0;i<resp.collection.length;i++) {
+            var dispatch = resp.collection[i];
+            html += '<tr id="' + dispatch.id + '" class="dispatch-row">';
+            html += '<td>' + dispatch.creation_datetime_utc + '</td>';
+            html += '<td>' + dispatch.call_type.title + '</td>';
+            html += '<td>' + dispatch.address.raw_address + '</td>';
+            html += '<td>' + dispatch.current_status + '</td>';
+            html += '<td>' + dispatch.agency.full_name + '</td>';
+            //html += '<td>' + dispatch.dispatch_unique + '</td>';
+            html += '</tr>';
+
+            if ( dispatch.address.lat != null ) {
+              var marker = L.marker([dispatch.address.lat, dispatch.address.lng], {dispatch_id: dispatch.id} ).addTo(map);
+
+              marker.on('click', function(e) {
+                
+                var that = this;
+
+                $.ajax({
+                  url: 'api/v1/dispatches/' + e.target.options.dispatch_id,
+                  method: 'GET',
+                  success: function(resp) {
+
+                    var dispatch = resp;
+
+                    var _html = '';
+                    /*
+                    _html += '<b>' + dispatch.call_type.title + '</b><br/><hr>';
+                    _html += 'Date/Time: ' +  dispatch.creation_datetime_utc + '<br/>';
+                    _html += 'Dispatch Address: ' +  dispatch.address.raw_address + '<br/>';
+                    _html += 'Current Status: ' +  dispatch.current_status + '<br/>';
+                    _html += 'Responding Agency: ' +  dispatch.agency.full_name + '<br/>';*/
+                    _html += '<b style="font-size: 130%;">' + dispatch.call_type.title + '</b><br/>';
+                    _html += '<b style="font-size: 100%;">' + dispatch.agency.full_name + '</b><br/>';
+                    _html += '<i style="font-size: 100%;">' + dispatch.address.raw_address + '</i><br/><br/>';
+                    _html += 'Current Status: <b>' + dispatch.current_status + '</b><br/><br/>';
+                    _html += '<table>';
+                    _html += '<thead>';
+                    _html += '<tr>';
+                    _html += '<th>Status</th>';
+                    _html += '<th>Time</th>';
+                    _html += '</tr>';
+                    _html += '</thead>';
+                    _html += '<tbody>';
+                    _html += '<tr><td>Dispatch</td><td>' + parseUTCDateTime(dispatch.dispatched_datetime_utc) + '</td></tr>';
+                    _html += '<tr><td>Waiting</td><td>' + parseUTCDateTime(dispatch.waiting_datetime_utc) + '</td></tr>';
+                    _html += '<tr><td>Enroute</td><td>' + parseUTCDateTime(dispatch.enroute_datetime_utc) + '</td></tr>';
+                    _html += '<tr><td>On Scene/Time</td><td>' + parseUTCDateTime(dispatch.onscene_datetime_utc) + '</td></tr>';
+                    //_html += '<tr><td>Closed</td><td>' + parseUTCDateTime(dispatch.closed_datetime_utc) + '</td></tr>';
+                    _html += '</tr>';
+                    _html += '</tbody>';
+                    _html += '</table>';
+
+                    that.bindPopup(_html).openPopup();
+
+                  },
+                  error: function(resp) {
+
+                  }
+
+                });
+
+              });
+
+              //marker.bindPopup(_html);
             }
-            $('#current-calls-tbody').html(html);
-            $('#table-loading').hide();
-            $('#current-calls-table').show();
 
-            $('.dispatch-row').off('click');
-            $('.dispatch-row').on('click', function() {
-              
-              var index = parseInt($(this).prop('id').split('dispatch-index-')[1]);
-              var dispatch = dispatches[index];
-
-              html = '';
-              html += '<h2>Dispatch Details</h2>';
-              html += '</hr>'
-              html += '<table><tbody>';
-              
-              html += '<tr><td>ID</td><td>' + dispatch.dispatch_unique + '</td></tr>';
-
-              html += '<tr><td>Call Type</td><td>' + dispatch.call_type.title + '</td></tr>';
-              html += '<tr><td>Dispatch Address</td><td>' + dispatch.address.raw_address + '</td></tr>';
-
-              html += '<tr><td>Dispatch Date/Time</td><td>' + parseUTCDateTime(dispatch.dispatched_datetime_utc) + '</td></tr>';
-              html += '<tr><td>Waiting Date/Time</td><td>' + parseUTCDateTime(dispatch.waiting_datetime_utc) + '</td></tr>';
-              html += '<tr><td>Enroute Date/Time</td><td>' + parseUTCDateTime(dispatch.enroute_datetime_utc) + '</td></tr>';
-              html += '<tr><td>On Scene Date/Time</td><td>' + parseUTCDateTime(dispatch.onscene_datetime_utc) + '</td></tr>';
-              html += '<tr><td>Closed Date/Time</td><td>' + parseUTCDateTime(dispatch.closed_datetime_utc) + '</td></tr>';
-              
-              // instanciate new modal
-              var modal = new tingle.modal({
-                footer: true,
-                stickyFooter: false,
-                //closeMethods: ['overlay', 'button', 'escape'],
-                closeMethods: ['overlay', 'escape'],
-                closeLabel: "Close",
-                //cssClass: ['custom-class-1', 'custom-class-2'],
-                onOpen: function() {
-                  console.log('modal open');
-                },
-                onClose: function() {
-                  console.log('modal closed');
-                },
-                beforeClose: function() {
-                  // here's goes some logic
-                  // e.g. save content before closing the modal
-                  return true; // close the modal
-                  //return false; // nothing happens
-                }
-              });
-
-              modal.setContent(html);
-
-              // add a button
-              modal.addFooterBtn('Close', 'tingle-btn tingle-btn--danger', function() {
-                // here goes some logic
-                modal.close();
-              });
-
-
-              modal.open();
-
-            });
-
-          },
-          error: function(resp) {
-            console.log('ERROR');
-            console.log(resp);
           }
-        });
+          $('#current-calls-tbody').html(html);
+          $('#table-loading').hide();
+          $('#current-calls-table').show();
+
+          $('.dispatch-row').off('click');
+          $('.dispatch-row').on('click', function() {
+            
+            //var index = parseInt($(this).prop('id').split('dispatch-index-')[1]);
+            //var dispatch = dispatches[index];
+
+            var id = $(this).prop('id');
+
+            $.ajax({
+                url: 'api/v1/dispatches/' + id,
+                method: 'GET',
+                success: function(resp) {
+
+                  //console.log(resp);
+
+                  html = '';
+                  html += '<h2>Dispatch Details</h2>';
+                  html += '</hr>'
+                  html += '<table><tbody>';
+                  
+                  html += '<tr><td>ID</td><td>' + dispatch.dispatch_unique + '</td></tr>';
+
+                  html += '<tr><td>Agency</td><td>' + dispatch.agency.title + '</td></tr>';
+
+                  html += '<tr><td>Call Type</td><td>' + dispatch.call_type.title + '</td></tr>';
+                  html += '<tr><td>Dispatch Address</td><td>' + dispatch.address.raw_address + '</td></tr>';
+
+                  html += '<tr><td>Dispatch Date/Time</td><td>' + parseUTCDateTime(dispatch.dispatched_datetime_utc) + '</td></tr>';
+                  html += '<tr><td>Waiting Date/Time</td><td>' + parseUTCDateTime(dispatch.waiting_datetime_utc) + '</td></tr>';
+                  html += '<tr><td>Enroute Date/Time</td><td>' + parseUTCDateTime(dispatch.enroute_datetime_utc) + '</td></tr>';
+                  html += '<tr><td>On Scene Date/Time</td><td>' + parseUTCDateTime(dispatch.onscene_datetime_utc) + '</td></tr>';
+                  html += '<tr><td>Closed Date/Time</td><td>' + parseUTCDateTime(dispatch.closed_datetime_utc) + '</td></tr>';
+                  
+                  // instanciate new modal
+                  var modal = new tingle.modal({
+                    footer: true,
+                    stickyFooter: false,
+                    //closeMethods: ['overlay', 'button', 'escape'],
+                    closeMethods: ['overlay', 'escape'],
+                    closeLabel: "Close",
+                    //cssClass: ['custom-class-1', 'custom-class-2'],
+                    onOpen: function() {
+                      //console.log('modal open');
+                    },
+                    onClose: function() {
+                      //console.log('modal closed');
+                    },
+                    beforeClose: function() {
+                      // here's goes some logic
+                      // e.g. save content before closing the modal
+                      return true; // close the modal
+                      //return false; // nothing happens
+                    }
+                  });
+
+                  modal.setContent(html);
+
+                  // add a button
+                  modal.addFooterBtn('Close', 'tingle-btn tingle-btn--danger', function() {
+                    // here goes some logic
+                    modal.close();
+                  });
+
+
+                  modal.open();
+                },
+                error: function(resp) {
+                  //console.log(resp);
+                }
+
+              });
+
+          });
+
+        },
+        error: function(resp) {
+          console.log('ERROR');
+          console.log(resp);
+        }
+      });
 
         
 

@@ -8,6 +8,8 @@ def main(global_config, **settings):
     config = Configurator(settings=settings)
     config.include('pyramid_jinja2')
 
+    config.add_static_view('static', 'static', cache_max_age=1)
+
     secret = config.get_settings().get('mcsafetyfeed.secret')
     if not secret:
         # thius should never happen in production! aaahhh!

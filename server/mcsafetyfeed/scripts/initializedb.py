@@ -109,4 +109,7 @@ def main(argv=sys.argv):
         if isinstance(setting, list) and len(setting) != 0:
             setting = setting[0]
 
-        print("Scraper Token: %s" % setting.value)
+        #print("Scraper Token: %s" % setting.value)
+
+        with open('../scraper/token.txt', 'w') as f:
+            f.write(setting.value)
