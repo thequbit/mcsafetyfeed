@@ -207,15 +207,36 @@ class DispatchesInsertAPI(BaseRequest):
                                 if isinstance(dispatch, list) and len(dispatch) > 0:
                                     dispatch = dispatch[0]
 
-                                # does exist, may need to update.  check if the datetime
-                                # for this status is null, and if it is, set it to the 
-                                # current datetime.
-                                key = '%s_datetime_utc' % status_string.lower()
-                                if dispatch.__dict__[key] == None:
-                                    payload = dict()
-                                    payload[key] = datetime.datetime.utcnow()
-                                    payload['current_status'] = status_string
-                                    dispatch = Dispatches.update_by_id(self.request.dbsession, dispatch.id, **payload)
+                                valid_status = (
+                                    'dispatched',
+                                    'waiting',
+                                    'enroute',
+                                    'onscene',
+                                    'closed',
+                                )
+
+                                if status_string.lower() in valid_status:
+
+                                    # does exist, may need to update.  check if the datetime
+                                    # for this status is null, and if it is, set it to the 
+                                    # current datetime.
+                                    key = '%s_datetime_utc' % status_string.lower()
+                                    if dispatch.__dict__[key] == None:
+                                        payload = dict()
+                                        payload[key] = datetime.datetime.utcnow()
+                                        payload['current_status'] = status_string
+                                        dispatch = Dispatches.update_by_id(self.request.dbsession, dispatch.id, **payload)
+
+                                else:
+
+                                    #
+                                    # this is a status we're not familar with.
+                                    #
+
+                                    # todo:
+                                    #   capture this somewhere?
+
+                                    pass
 
                             else:
 

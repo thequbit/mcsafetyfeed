@@ -19,6 +19,18 @@
 
     <style>
 
+      article {
+        margin-top: 1rem;
+      }
+
+      .right {
+        float: right;
+      }
+
+      h2 {
+        margin-top: 1rem;
+      }
+
       #table-loading {
         padding-top: 3rem;
         width: 100%;
@@ -33,9 +45,28 @@
         height: 28rem; 
         width: 100%;
         margin: auto;
-        margin-top: 2rem;
       }
 
+      .tingle-modal {
+        /* this is to get above the leaflet atrib div */
+        z-index: 10000;
+      }
+
+      @media screen and (max-width: 800px) {
+
+        #current-calls-table-wrapper {
+          display: none;
+        }
+
+      }
+
+      @media screen and (min-width: 800px) {
+
+        #current-calls-list-wrapper {
+          display: none;
+        }
+
+      }
      
     </style>
 
@@ -64,41 +95,82 @@
         <p>An unofficial 911 call collator for the Rochester, NY region</p>
       </section>
 
+    <!-- Info -->
+    <section>
+      <div class="inner">
+        <!--<h2><b>Active 911 dispatches within Monroe County, NY</b></h2>-->
+        <div class="flex flex-1">
+          <!--<article>-->
+            <h2>Public Safety Feed</h2>
+            <p>
+              Below are a list of the currently <i>active</i> dispatches within the county.
+              This list is generated using a Public Safety
+              <a href="https://www2.monroecounty.gov/safety-911.php">RSS Feed</a> that is 
+              provided by the county.  The RSS feed is a snap-shot in time of the current
+              dispatches and their status.  This website creates a history of this information.
+            </p>
+            <p>
+              Click on a marker on the map for more information, or on a dispatch within the 
+              table below.  Date and time information will be displayed for when a dispatch 
+              has changed state, as well as what agency is responding to the dispatch.
+            </p>
+          <!--</article>
+          <article>
+            <h3>History and Search</h3>
+            <p>
+              
+            </p>
+            <a class="button special right">Search</a>
+            <a class="button special">History</a>
+          </article>-->
+        </div>
+      </div>
+    </section>    
+
     <!-- Map -->
     <section>
       <div class="inner">
         <div class="flex flex-1">
+          <h2>Map of Current Dispatches</h2>
           <div id="current-dispatches-map"></div>
         </div>
       </div>
     </section>
 
     <!-- Table -->
-      <section id="one" class="wrapper">
+      <section>
         <div class="inner">
           <div class="flex flex-1">
+            <h2>List of Current Dispatches</h2>
             <div id="table-loading">
               <center>
                 <img src="media/ajax-loader.gif"></img><br/><br/>
                 Loading ...
               </center>
             </div>
-            <table id="current-calls-table">
-              <thead>
-                <tr>
-                  <th>Time</th>
-                  <th>Call Type</th>
-                  <th>Address</th>
-                  <th>Status</th>
-                  <th>Agency</th>
-                  <!--<th>ID</th>-->
-                </tr>
-              </thead>
-              <tbody id="current-calls-tbody">
-              
-              </tbody>
-            </table>
-
+            <div>
+              <b><i>Click on a dispach to display more information</i></b><br/><br/>
+              <div id="current-calls-table-wrapper">
+                <table id="current-calls-table">
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Call Type</th>
+                      <th>Address</th>
+                      <th>Status</th>
+                      <th>Agency</th>
+                      <!--<th>ID</th>-->
+                    </tr>
+                  </thead>
+                  <tbody id="current-calls-tbody">
+                  
+                  </tbody>
+                </table>
+              </div>
+              <div id="current-calls-list-wrapper">
+              hi there.
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -207,17 +279,21 @@
 
           dispatches = resp.collection;
 
-          html = '';
+          table_html = '';
+          list_html = '';
           for(var i=0;i<resp.collection.length;i++) {
             var dispatch = resp.collection[i];
-            html += '<tr id="' + dispatch.id + '" class="dispatch-row">';
-            html += '<td>' + dispatch.creation_datetime_utc + '</td>';
-            html += '<td>' + dispatch.call_type.title + '</td>';
-            html += '<td>' + dispatch.address.raw_address + '</td>';
-            html += '<td>' + dispatch.current_status + '</td>';
-            html += '<td>' + dispatch.agency.full_name + '</td>';
+            
+            table_html += '<tr id="' + dispatch.id + '" class="dispatch-row">';
+            table_html += '<td>' + parseUTCDateTime(dispatch.creation_datetime_utc) + '</td>';
+            table_html += '<td>' + dispatch.call_type.title + '</td>';
+            table_html += '<td>' + dispatch.address.raw_address + '</td>';
+            table_html += '<td>' + dispatch.current_status + '</td>';
+            table_html += '<td>' + dispatch.agency.full_name + '</td>';
             //html += '<td>' + dispatch.dispatch_unique + '</td>';
-            html += '</tr>';
+            table_html += '</tr>';
+
+            list_html += ''
 
             if ( dispatch.address.lat != null ) {
               var marker = L.marker([dispatch.address.lat, dispatch.address.lng], {dispatch_id: dispatch.id} ).addTo(map);
@@ -231,7 +307,7 @@
                   method: 'GET',
                   success: function(resp) {
 
-                    var dispatch = resp;
+                    var _dispatch = resp;
 
                     var _html = '';
                     /*
@@ -240,10 +316,10 @@
                     _html += 'Dispatch Address: ' +  dispatch.address.raw_address + '<br/>';
                     _html += 'Current Status: ' +  dispatch.current_status + '<br/>';
                     _html += 'Responding Agency: ' +  dispatch.agency.full_name + '<br/>';*/
-                    _html += '<b style="font-size: 130%;">' + dispatch.call_type.title + '</b><br/>';
-                    _html += '<b style="font-size: 100%;">' + dispatch.agency.full_name + '</b><br/>';
-                    _html += '<i style="font-size: 100%;">' + dispatch.address.raw_address + '</i><br/><br/>';
-                    _html += 'Current Status: <b>' + dispatch.current_status + '</b><br/><br/>';
+                    _html += '<b style="font-size: 130%;">' + _dispatch.call_type.title + '</b><br/>';
+                    _html += '<b style="font-size: 100%;">' + _dispatch.agency.full_name + '</b><br/>';
+                    _html += '<i style="font-size: 100%;">' + _dispatch.address.raw_address + '</i><br/><br/>';
+                    _html += 'Current Status: <b>' + _dispatch.current_status + '</b><br/><br/>';
                     _html += '<table>';
                     _html += '<thead>';
                     _html += '<tr>';
@@ -252,10 +328,10 @@
                     _html += '</tr>';
                     _html += '</thead>';
                     _html += '<tbody>';
-                    _html += '<tr><td>Dispatch</td><td>' + parseUTCDateTime(dispatch.dispatched_datetime_utc) + '</td></tr>';
-                    _html += '<tr><td>Waiting</td><td>' + parseUTCDateTime(dispatch.waiting_datetime_utc) + '</td></tr>';
-                    _html += '<tr><td>Enroute</td><td>' + parseUTCDateTime(dispatch.enroute_datetime_utc) + '</td></tr>';
-                    _html += '<tr><td>On Scene/Time</td><td>' + parseUTCDateTime(dispatch.onscene_datetime_utc) + '</td></tr>';
+                    _html += '<tr><td>Dispatch</td><td>' + parseUTCDateTime(_dispatch.dispatched_datetime_utc) + '</td></tr>';
+                    _html += '<tr><td>Waiting</td><td>' + parseUTCDateTime(_dispatch.waiting_datetime_utc) + '</td></tr>';
+                    _html += '<tr><td>Enroute</td><td>' + parseUTCDateTime(_dispatch.enroute_datetime_utc) + '</td></tr>';
+                    _html += '<tr><td>On Scene</td><td>' + parseUTCDateTime(_dispatch.onscene_datetime_utc) + '</td></tr>';
                     //_html += '<tr><td>Closed</td><td>' + parseUTCDateTime(dispatch.closed_datetime_utc) + '</td></tr>';
                     _html += '</tr>';
                     _html += '</tbody>';
@@ -276,7 +352,8 @@
             }
 
           }
-          $('#current-calls-tbody').html(html);
+          $('#current-calls-tbody').html(table_html);
+          $('#current-calls-list').html(list_html);
           $('#table-loading').hide();
           $('#current-calls-table').show();
 
