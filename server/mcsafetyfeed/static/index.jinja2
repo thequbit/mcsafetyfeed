@@ -285,7 +285,7 @@
             var dispatch = resp.collection[i];
             
             table_html += '<tr id="' + dispatch.id + '" class="dispatch-row">';
-            table_html += '<td>' + parseUTCDateTime(dispatch.creation_datetime_utc) + '</td>';
+            table_html += '<td>' + parseUTCDateTime(dispatch.creation_datetime_utc).replace(', ','<br/>') + '</td>';
             table_html += '<td>' + dispatch.call_type.title + '</td>';
             table_html += '<td>' + dispatch.address.raw_address + '</td>';
             table_html += '<td>' + dispatch.current_status + '</td>';
