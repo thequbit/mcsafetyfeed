@@ -372,23 +372,25 @@
 
                   //console.log(resp);
 
+                  var _dispatch = resp;
+
                   html = '';
                   html += '<h2>Dispatch Details</h2>';
                   html += '</hr>'
                   html += '<table><tbody>';
                   
-                  html += '<tr><td>ID</td><td>' + dispatch.dispatch_unique + '</td></tr>';
+                  html += '<tr><td>ID</td><td>' + _dispatch.dispatch_unique + '</td></tr>';
 
-                  html += '<tr><td>Agency</td><td>' + dispatch.agency.title + '</td></tr>';
+                  html += '<tr><td>Agency</td><td>' + _dispatch.agency.title + '</td></tr>';
 
-                  html += '<tr><td>Call Type</td><td>' + dispatch.call_type.title + '</td></tr>';
-                  html += '<tr><td>Dispatch Address</td><td>' + dispatch.address.raw_address + '</td></tr>';
+                  html += '<tr><td>Call Type</td><td>' + _dispatch.call_type.title + '</td></tr>';
+                  html += '<tr><td>Dispatch Address</td><td>' + _dispatch.address.raw_address + '</td></tr>';
 
-                  html += '<tr><td>Dispatch Date/Time</td><td>' + parseUTCDateTime(dispatch.dispatched_datetime_utc) + '</td></tr>';
-                  html += '<tr><td>Waiting Date/Time</td><td>' + parseUTCDateTime(dispatch.waiting_datetime_utc) + '</td></tr>';
-                  html += '<tr><td>Enroute Date/Time</td><td>' + parseUTCDateTime(dispatch.enroute_datetime_utc) + '</td></tr>';
-                  html += '<tr><td>On Scene Date/Time</td><td>' + parseUTCDateTime(dispatch.onscene_datetime_utc) + '</td></tr>';
-                  html += '<tr><td>Closed Date/Time</td><td>' + parseUTCDateTime(dispatch.closed_datetime_utc) + '</td></tr>';
+                  html += '<tr><td>Dispatch Date/Time</td><td>' + parseUTCDateTime(_dispatch.dispatched_datetime_utc) + '</td></tr>';
+                  html += '<tr><td>Waiting Date/Time</td><td>' + parseUTCDateTime(_dispatch.waiting_datetime_utc) + '</td></tr>';
+                  html += '<tr><td>Enroute Date/Time</td><td>' + parseUTCDateTime(_dispatch.enroute_datetime_utc) + '</td></tr>';
+                  html += '<tr><td>On Scene Date/Time</td><td>' + parseUTCDateTime(_dispatch.onscene_datetime_utc) + '</td></tr>';
+                  html += '<tr><td>Closed Date/Time</td><td>' + parseUTCDateTime(_dispatch.closed_datetime_utc) + '</td></tr>';
                   
                   // instanciate new modal
                   var modal = new tingle.modal({
